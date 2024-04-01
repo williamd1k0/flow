@@ -4,6 +4,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:percent_indicator/percent_indicator.dart';
 
 void main() {
   runApp(const FlowApp());
@@ -12,28 +13,11 @@ void main() {
 class FlowApp extends StatelessWidget {
   const FlowApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData.dark(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        //colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
       home: const FlowTimerPage(),
@@ -65,6 +49,7 @@ class _FlowTimerPageState extends State<FlowTimerPage> {
 
   int _flow_time = 0;
   int _rest_time = 0;
+  int _rest_max = 0;
   double _rest_ratio = 0.25;
   TimerMode _timer_mode = TimerMode.FLOW;
   TimerState _timer_state = TimerState.STOP;
@@ -102,7 +87,7 @@ class _FlowTimerPageState extends State<FlowTimerPage> {
     int minutes = seconds ~/ 60;
     seconds %= 60;
     NumberFormat fmt = NumberFormat("00");
-    return "${hour >= 1 ? "${fmt.format(hour)}:" : ""}${fmt.format(minutes)}:${fmt.format(seconds)}";
+    return "${hour <= 1 ? "${fmt.format(hour)}:" : ""}${fmt.format(minutes)}:${hour <= 1 ? "${fmt.format(seconds)}" : ""}";
   }
 
   void _on_start_pressed() {
@@ -133,7 +118,8 @@ class _FlowTimerPageState extends State<FlowTimerPage> {
       switch (_timer_mode) {
         case TimerMode.FLOW:
           _timer_state = TimerState.STOP;
-          _rest_time = _flow_time * _rest_ratio ~/ 1;
+          _rest_max = _flow_time * _rest_ratio ~/ 1;
+          _rest_time = _rest_max;
           _timer_mode = TimerMode.REST;
           break;
         case TimerMode.REST:
@@ -155,13 +141,31 @@ class _FlowTimerPageState extends State<FlowTimerPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              _timer_mode == TimerMode.FLOW ? "Flow time" : "Rest time",
-            ),
-            Text(
-              format_time(
-                  _timer_mode == TimerMode.FLOW ? _flow_time : _rest_time),
-              style: Theme.of(context).textTheme.headlineLarge,
+            CircularPercentIndicator(
+              radius: 100.0,
+              lineWidth: 10.0,
+              percent:
+                  _timer_mode == TimerMode.FLOW ? 0.0 : _rest_time / _rest_max,
+              backgroundWidth: 5,
+              circularStrokeCap: CircularStrokeCap.round,
+              progressColor: _timer_mode == TimerMode.FLOW
+                  ? Colors.transparent
+                  : Colors.green,
+              backgroundColor: Colors.black.withAlpha((255 * 0.2) ~/ 1),
+              center: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    format_time(_timer_mode == TimerMode.FLOW
+                        ? _flow_time
+                        : _rest_time),
+                    style: Theme.of(context).textTheme.headlineLarge,
+                  ),
+                  Text(
+                    _timer_mode == TimerMode.FLOW ? "Flow time" : "Rest time",
+                  ),
+                ],
+              ),
             ),
             SizedBox(height: 30),
             Row(
@@ -188,7 +192,7 @@ class _FlowTimerPageState extends State<FlowTimerPage> {
                         : _on_next_pressed,
                     icon: Icon(
                       _timer_mode == TimerMode.FLOW
-                          ? Icons.skip_next
+                          ? Icons.restore
                           : Icons.skip_next,
                     ),
                     label:

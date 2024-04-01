@@ -1,18 +1,23 @@
+import 'dart:async';
+import 'dart:ffi';
+import 'dart:math';
+
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const FlowApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class FlowApp extends StatelessWidget {
+  const FlowApp({super.key});
 
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Flutter Demo',
-      theme: ThemeData(
+      theme: ThemeData.dark(
         // This is the theme of your application.
         //
         // TRY THIS: Try running your application with "flutter run". You'll see
@@ -28,98 +33,171 @@ class MyApp extends StatelessWidget {
         //
         // This works for code too, not just values: Most code changes can be
         // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        //colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const FlowTimerPage(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+class FlowTimerPage extends StatefulWidget {
+  const FlowTimerPage({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<FlowTimerPage> createState() => _FlowTimerPageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+enum TimerMode {
+  FLOW,
+  REST,
+}
 
-  void _incrementCounter() {
+enum TimerState {
+  STOP,
+  PAUSE,
+  ACTIVE,
+}
+
+class _FlowTimerPageState extends State<FlowTimerPage> {
+  final Duration _timer_interval = Duration(milliseconds: 50);
+  Timer? _timer;
+
+  int _flow_time = 0;
+  int _rest_time = 0;
+  double _rest_ratio = 0.25;
+  TimerMode _timer_mode = TimerMode.FLOW;
+  TimerState _timer_state = TimerState.STOP;
+
+  @override
+  void initState() {
+    _timer = Timer.periodic(_timer_interval, (timer) {
+      if (_timer_state == TimerState.ACTIVE) {
+        update_time_spent(_timer_interval.inMilliseconds);
+      }
+    });
+    super.initState();
+  }
+
+  void update_time_spent(int amount) {
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      _flow_time += amount;
+      _rest_time = max(_rest_time - amount, 0);
+      if (_timer_mode == TimerMode.REST &&
+          _timer_state == TimerState.ACTIVE &&
+          _rest_time <= 0) {
+        _flow_time = 0;
+        _timer_state = TimerState.STOP;
+        _timer_mode = TimerMode.FLOW;
+        // TODO: Notify
+      }
+    });
+  }
+
+  String format_time(int time) {
+    int seconds = time ~/ 1000;
+    seconds = seconds % (24 * 3600);
+    int hour = seconds ~/ 3600;
+    seconds %= 3600;
+    int minutes = seconds ~/ 60;
+    seconds %= 60;
+    NumberFormat fmt = NumberFormat("00");
+    return "${hour >= 1 ? "${fmt.format(hour)}:" : ""}${fmt.format(minutes)}:${fmt.format(seconds)}";
+  }
+
+  void _on_start_pressed() {
+    setState(() {
+      switch (_timer_state) {
+        case TimerState.ACTIVE:
+          _timer_state = TimerState.PAUSE;
+          break;
+        case TimerState.PAUSE:
+          _timer_state = TimerState.ACTIVE;
+          break;
+        case TimerState.STOP:
+          switch (_timer_mode) {
+            case TimerMode.FLOW:
+              _flow_time = 0;
+              _timer_state = TimerState.ACTIVE;
+              break;
+            case TimerMode.REST:
+              _timer_state = TimerState.ACTIVE;
+              break;
+          }
+      }
+    });
+  }
+
+  void _on_next_pressed() {
+    setState(() {
+      switch (_timer_mode) {
+        case TimerMode.FLOW:
+          _timer_state = TimerState.STOP;
+          _rest_time = _flow_time * _rest_ratio ~/ 1;
+          _timer_mode = TimerMode.REST;
+          break;
+        case TimerMode.REST:
+          _timer_state = TimerState.STOP;
+          _flow_time = 0;
+          _timer_mode = TimerMode.FLOW;
+          break;
+      }
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
+      //appBar: AppBar(
+      // title: Text(widget.title),
+      //   ),
       body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
         child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
           mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
+          children: [
+            Text(
+              _timer_mode == TimerMode.FLOW ? "Flow time" : "Rest time",
             ),
             Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+              format_time(
+                  _timer_mode == TimerMode.FLOW ? _flow_time : _rest_time),
+              style: Theme.of(context).textTheme.headlineLarge,
             ),
+            SizedBox(height: 30),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _timer_state == TimerState.ACTIVE
+                    ? IconButton(
+                        onPressed:
+                            _timer_mode == TimerMode.REST && _rest_time <= 0
+                                ? null
+                                : _on_start_pressed,
+                        icon: Icon(Icons.pause))
+                    : IconButton.filled(
+                        onPressed:
+                            _timer_mode == TimerMode.REST && _rest_time <= 0
+                                ? null
+                                : _on_start_pressed,
+                        icon: Icon(Icons.play_arrow),
+                      ),
+                SizedBox(width: 10),
+                OutlinedButton.icon(
+                    onPressed: _timer_mode == TimerMode.FLOW && _flow_time <= 1
+                        ? null
+                        : _on_next_pressed,
+                    icon: Icon(
+                      _timer_mode == TimerMode.FLOW
+                          ? Icons.skip_next
+                          : Icons.skip_next,
+                    ),
+                    label:
+                        Text(_timer_mode == TimerMode.FLOW ? "Rest" : "Skip"))
+              ],
+            )
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }

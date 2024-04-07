@@ -1,9 +1,9 @@
 import 'dart:async';
-import 'dart:ffi';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:adaptive_theme/adaptive_theme.dart';
+import 'package:intl/intl.dart' as intl;
 import 'package:percent_indicator/percent_indicator.dart';
 
 void main() {
@@ -15,12 +15,16 @@ class FlowApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData.dark(
-        useMaterial3: true,
+    return AdaptiveTheme(
+      light: ThemeData.light(useMaterial3: true),
+      dark: ThemeData.dark(useMaterial3: true),
+      initial: AdaptiveThemeMode.system,
+      builder: (theme, dark_theme) => MaterialApp(
+        title: "Flow",
+        theme: theme,
+        darkTheme: dark_theme,
+        home: const FlowTimerPage(),
       ),
-      home: const FlowTimerPage(),
     );
   }
 }
@@ -30,6 +34,14 @@ class FlowTimerPage extends StatefulWidget {
 
   @override
   State<FlowTimerPage> createState() => _FlowTimerPageState();
+}
+
+class AppConfigs {
+  bool swap_flow_buttons = false;
+  bool swap_rest_buttons = false;
+  bool auto_start_rest = false;
+  double rest_ratio = 25;
+  AdaptiveThemeMode theme_mode = AdaptiveThemeMode.system;
 }
 
 enum TimerMode {
@@ -43,16 +55,22 @@ enum TimerState {
   ACTIVE,
 }
 
+enum Page {
+  TIMER,
+  CONFIGS,
+}
+
 class _FlowTimerPageState extends State<FlowTimerPage> {
   final Duration _timer_interval = Duration(milliseconds: 50);
   Timer? _timer;
+  final AppConfigs configs = AppConfigs();
 
   int _flow_time = 0;
   int _rest_time = 0;
   int _rest_max = 0;
-  double _rest_ratio = 0.25;
   TimerMode _timer_mode = TimerMode.FLOW;
   TimerState _timer_state = TimerState.STOP;
+  Page page = Page.TIMER;
 
   @override
   void initState() {
@@ -86,7 +104,7 @@ class _FlowTimerPageState extends State<FlowTimerPage> {
     seconds %= 3600;
     int minutes = seconds ~/ 60;
     seconds %= 60;
-    NumberFormat fmt = NumberFormat("00");
+    intl.NumberFormat fmt = intl.NumberFormat("00");
     return "${hour <= 1 ? "${fmt.format(hour)}:" : ""}${fmt.format(minutes)}:${hour <= 1 ? "${fmt.format(seconds)}" : ""}";
   }
 
@@ -118,9 +136,12 @@ class _FlowTimerPageState extends State<FlowTimerPage> {
       switch (_timer_mode) {
         case TimerMode.FLOW:
           _timer_state = TimerState.STOP;
-          _rest_max = _flow_time * _rest_ratio ~/ 1;
+          _rest_max = _flow_time * (configs.rest_ratio / 100) ~/ 1;
           _rest_time = _rest_max;
           _timer_mode = TimerMode.REST;
+          if (configs.auto_start_rest) {
+            _timer_state = TimerState.ACTIVE;
+          }
           break;
         case TimerMode.REST:
           _timer_state = TimerState.STOP;
@@ -134,74 +155,167 @@ class _FlowTimerPageState extends State<FlowTimerPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      //appBar: AppBar(
-      // title: Text(widget.title),
-      //   ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircularPercentIndicator(
-              radius: 100.0,
-              lineWidth: 10.0,
-              percent:
-                  _timer_mode == TimerMode.FLOW ? 0.0 : _rest_time / _rest_max,
-              backgroundWidth: 5,
-              circularStrokeCap: CircularStrokeCap.round,
-              progressColor: _timer_mode == TimerMode.FLOW
-                  ? Colors.transparent
-                  : Colors.green,
-              backgroundColor: Colors.black.withAlpha((255 * 0.2) ~/ 1),
-              center: Column(
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(top: 5.0, left: 0.0),
+        child: Row(children: [
+          IconButton(
+            onPressed: () => setState(() {
+              page = page == Page.TIMER ? Page.CONFIGS : Page.TIMER;
+            }),
+            //backgroundColor: Colors.transparent,
+            icon: Icon(
+                page == Page.TIMER ? Icons.settings : Icons.arrow_back_ios_new),
+          ),
+          IconButton(
+            onPressed: () => AdaptiveTheme.of(context).toggleThemeMode(),
+            icon: Icon(Icons.dark_mode),
+          )
+        ]),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.miniStartTop,
+      body: page == Page.TIMER
+          ? Center(
+              child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
-                    format_time(_timer_mode == TimerMode.FLOW
-                        ? _flow_time
-                        : _rest_time),
-                    style: Theme.of(context).textTheme.headlineLarge,
+                  CircularPercentIndicator(
+                    radius: 94,
+                    lineWidth: 12,
+                    percent: _timer_mode == TimerMode.FLOW
+                        ? 0.0
+                        : _rest_time / _rest_max,
+                    backgroundWidth: 8,
+                    circularStrokeCap: CircularStrokeCap.round,
+                    progressColor: _timer_mode == TimerMode.FLOW
+                        ? Colors.transparent
+                        : Colors.green,
+                    backgroundColor: Colors.black.withAlpha((255 * 0.2) ~/ 1),
+                    center: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          format_time(_timer_mode == TimerMode.FLOW
+                              ? _flow_time
+                              : _rest_time),
+                          style: Theme.of(context).textTheme.headlineLarge,
+                        ),
+                        Text(
+                          _timer_mode == TimerMode.FLOW
+                              ? "Flow time"
+                              : "Rest time",
+                        ),
+                      ],
+                    ),
                   ),
-                  Text(
-                    _timer_mode == TimerMode.FLOW ? "Flow time" : "Rest time",
-                  ),
+                  const SizedBox(height: 10),
+                  Directionality(
+                    textDirection: _timer_mode == TimerMode.FLOW
+                        ? (configs.swap_flow_buttons
+                            ? TextDirection.ltr
+                            : TextDirection.rtl)
+                        : (configs.swap_rest_buttons
+                            ? TextDirection.ltr
+                            : TextDirection.rtl),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _timer_state == TimerState.ACTIVE
+                            ? IconButton(
+                                onPressed: _timer_mode == TimerMode.REST &&
+                                        _rest_time <= 0
+                                    ? null
+                                    : _on_start_pressed,
+                                icon: Icon(Icons.pause))
+                            : IconButton.filled(
+                                onPressed: _timer_mode == TimerMode.REST &&
+                                        _rest_time <= 0
+                                    ? null
+                                    : _on_start_pressed,
+                                icon: const Icon(Icons.play_arrow),
+                              ),
+                        const SizedBox(width: 10),
+                        OutlinedButton.icon(
+                          onPressed:
+                              _timer_mode == TimerMode.FLOW && _flow_time <= 1
+                                  ? null
+                                  : _on_next_pressed,
+                          icon: Icon(
+                            _timer_mode == TimerMode.FLOW
+                                ? Icons.restore
+                                : Icons.skip_next,
+                          ),
+                          label: Text(
+                              _timer_mode == TimerMode.FLOW ? "Rest" : "Skip"),
+                        )
+                      ],
+                    ),
+                  )
                 ],
               ),
-            ),
-            SizedBox(height: 30),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _timer_state == TimerState.ACTIVE
-                    ? IconButton(
-                        onPressed:
-                            _timer_mode == TimerMode.REST && _rest_time <= 0
-                                ? null
-                                : _on_start_pressed,
-                        icon: Icon(Icons.pause))
-                    : IconButton.filled(
-                        onPressed:
-                            _timer_mode == TimerMode.REST && _rest_time <= 0
-                                ? null
-                                : _on_start_pressed,
-                        icon: Icon(Icons.play_arrow),
-                      ),
-                SizedBox(width: 10),
-                OutlinedButton.icon(
-                    onPressed: _timer_mode == TimerMode.FLOW && _flow_time <= 1
-                        ? null
-                        : _on_next_pressed,
-                    icon: Icon(
-                      _timer_mode == TimerMode.FLOW
-                          ? Icons.restore
-                          : Icons.skip_next,
-                    ),
-                    label:
-                        Text(_timer_mode == TimerMode.FLOW ? "Rest" : "Skip"))
-              ],
             )
-          ],
-        ),
-      ),
+          : Column(
+              children: [
+                const SizedBox(height: 45),
+                Expanded(
+                  child: ListView(
+                    children: [
+                      SwitchListTile(
+                        value: configs.auto_start_rest,
+                        title: const Text("Autostart Rest timer"),
+                        subtitle: const Text(
+                            "Automatically start the timer when Rest is pressed."),
+                        onChanged: (enabled) => setState(
+                          () {
+                            configs.auto_start_rest = enabled;
+                          },
+                        ),
+                      ),
+                      ListTile(
+                        title: const Text("Rest timer factor"),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                                "The percentage of Flow time that will be used as Rest time."),
+                            Slider(
+                              value: configs.rest_ratio,
+                              secondaryTrackValue: 25,
+                              min: 1,
+                              max: 100,
+                              divisions: 99,
+                              label: "${configs.rest_ratio.round()}%",
+                              onChanged: (value) => setState(() {
+                                configs.rest_ratio = value.round() * 1;
+                              }),
+                            )
+                          ],
+                        ),
+                        trailing: Text("${configs.rest_ratio.round()}%"),
+                      ),
+                      const Divider(),
+                      SwitchListTile(
+                        value: configs.swap_flow_buttons,
+                        title: const Text("Swap Flow buttons"),
+                        onChanged: (enabled) => setState(
+                          () {
+                            configs.swap_flow_buttons = enabled;
+                          },
+                        ),
+                      ),
+                      SwitchListTile(
+                        value: configs.swap_rest_buttons,
+                        title: const Text("Swap Rest buttons"),
+                        onChanged: (enabled) => setState(
+                          () {
+                            configs.swap_rest_buttons = enabled;
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              ],
+            ),
     );
   }
 }

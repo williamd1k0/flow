@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:intl/intl.dart' as intl;
 import 'package:percent_indicator/percent_indicator.dart';
 
@@ -64,6 +65,8 @@ class _FlowTimerPageState extends State<FlowTimerPage> {
   final Duration _timer_interval = Duration(milliseconds: 50);
   Timer? _timer;
   final AppConfigs configs = AppConfigs();
+  FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+      FlutterLocalNotificationsPlugin();
 
   int _flow_time = 0;
   int _rest_time = 0;
@@ -79,6 +82,16 @@ class _FlowTimerPageState extends State<FlowTimerPage> {
         update_time_spent(_timer_interval.inMilliseconds);
       }
     });
+    const LinuxInitializationSettings notify_linux =
+        LinuxInitializationSettings(defaultActionName: "Start Flow");
+    const InitializationSettings notify_settings =
+        InitializationSettings(linux: notify_linux);
+    flutterLocalNotificationsPlugin.initialize(notify_settings,
+        onDidReceiveNotificationResponse: (response) {
+      if (_timer_mode == TimerMode.FLOW && _timer_state == TimerState.STOP) {
+        _on_start_pressed();
+      }
+    });
     super.initState();
   }
 
@@ -92,7 +105,8 @@ class _FlowTimerPageState extends State<FlowTimerPage> {
         _flow_time = 0;
         _timer_state = TimerState.STOP;
         _timer_mode = TimerMode.FLOW;
-        // TODO: Notify
+        flutterLocalNotificationsPlugin.show(
+            0, "Rest is over!", "Let's get back to flow.", null);
       }
     });
   }
@@ -287,7 +301,7 @@ class _FlowTimerPageState extends State<FlowTimerPage> {
                               onChanged: (value) => setState(() {
                                 configs.rest_ratio = value.round() * 1;
                               }),
-                            )
+                            ),
                           ],
                         ),
                         trailing: Text("${configs.rest_ratio.round()}%"),

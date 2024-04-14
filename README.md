@@ -1,16 +1,21 @@
-# flow
+# Flow
 
-A new Flutter project.
+Flow is a simple Flutter app that implements a productivity technique called **Flowtime**.
 
-## Getting Started
+The Pomodoro technique is efficient for tasks you find boring, but having to take a break when you are 100% concentrated in something you like might be annoying.
+That's why the **Flowtime** technique exists: take appropriate breaks without loosing your *flow*.
 
-This project is a starting point for a Flutter application.
+## How does it work?
+The time you worked is multiplied by 20%, and that's the break time you'll take.
+E.g, if you worked for 60 minutes, you'll take a 10 minute break, if you worked for 2 hours, you'll take a 24 minute break.
 
-A few resources to get you started if this is your first Flutter project:
+## Inspiration
+This project was inspired by a Linux Flathub app called [Flowtime](https://github.com/Diego-Ivan/Flowtime).
+I just wanted to bring the concept of Flowtime to systems other than Linux.
+If you are using Linux and prefer a more *native* implementation (vala+libadwaita), I strongly recommend using the Flathub app.
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Features
+- Assistant for the Flowtime working technique
+- Assisted time calculations for breaks
+- Notification that alerts you when your break is done (WIP)
+- Built-in dark and light modes

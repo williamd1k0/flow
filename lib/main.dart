@@ -39,7 +39,7 @@ class FlowTimerPage extends StatefulWidget {
 }
 
 class AppConfigs {
-  double get rest_ratio => _data["flow.rest_ratio"]?.toDouble() ?? 25;
+  double get rest_ratio => _data["flow.rest_ratio"]?.toDouble() ?? 20;
   void set rest_ratio(double val) {
     _data["flow.rest_ratio"] = val;
     _prefs.then((prefs) => prefs.setDouble("flow.rest_ratio", val));
@@ -82,7 +82,7 @@ class AppConfigs {
   Future<void> init() async {
     final SharedPreferences prefs = await _prefs;
     _data["flow.rest_ratio"] =
-        prefs.getDouble("flow.rest_ratio")?.toDouble() ?? 25;
+        prefs.getDouble("flow.rest_ratio")?.toDouble() ?? 20;
     _data["flow.auto_start_rest"] =
         prefs.getBool("flow.auto_start_rest") ?? false;
     _data["flow.swap_flow_buttons"] =
@@ -350,7 +350,7 @@ class _FlowTimerPageState extends State<FlowTimerPage> {
                                 "The percentage of Flow time that will be used as Rest time."),
                             Slider(
                               value: configs.rest_ratio,
-                              secondaryTrackValue: 25,
+                              secondaryTrackValue: 20,
                               min: 1,
                               max: 100,
                               divisions: 99,

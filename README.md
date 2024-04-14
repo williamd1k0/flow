@@ -1,5 +1,7 @@
 # Flow
 
+![image](https://github.com/williamd1k0/flow/assets/10428035/5acd3a91-ca76-4cd1-b329-6ae0f66b069e)
+
 Flow is a simple Flutter app that implements a productivity technique called **Flowtime**.
 
 The Pomodoro technique is efficient for tasks you find boring, but having to take a break when you are 100% concentrated in something you like might be annoying.

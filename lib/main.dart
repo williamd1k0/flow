@@ -6,6 +6,7 @@ import 'package:adaptive_theme/adaptive_theme.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:intl/intl.dart' as intl;
 import 'package:percent_indicator/percent_indicator.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   runApp(const FlowApp());
@@ -19,7 +20,7 @@ class FlowApp extends StatelessWidget {
     return AdaptiveTheme(
       light: ThemeData.light(useMaterial3: true),
       dark: ThemeData.dark(useMaterial3: true),
-      initial: AdaptiveThemeMode.system,
+      initial: AdaptiveThemeMode.dark,
       builder: (theme, dark_theme) => MaterialApp(
         title: "Flow",
         theme: theme,
@@ -38,11 +39,57 @@ class FlowTimerPage extends StatefulWidget {
 }
 
 class AppConfigs {
-  bool swap_flow_buttons = false;
-  bool swap_rest_buttons = false;
-  bool auto_start_rest = false;
-  double rest_ratio = 25;
-  AdaptiveThemeMode theme_mode = AdaptiveThemeMode.system;
+  double get rest_ratio => _data["flow.rest_ratio"]?.toDouble() ?? 25;
+  void set rest_ratio(double val) {
+    _data["flow.rest_ratio"] = val;
+    _prefs.then((prefs) => prefs.setDouble("flow.rest_ratio", val));
+  }
+
+  bool get auto_start_rest => _data["flow.auto_start_rest"] ?? false;
+  void set auto_start_rest(bool val) {
+    _set_bool("flow.auto_start_rest", val);
+  }
+
+  bool get swap_flow_buttons => _data["flow.swap_flow_buttons"] ?? false;
+  void set swap_flow_buttons(bool val) {
+    _set_bool("flow.swap_flow_buttons", val);
+  }
+
+  bool get swap_rest_buttons => _data["flow.swap_rest_buttons"] ?? false;
+  void set swap_rest_buttons(bool val) {
+    _set_bool("flow.swap_rest_buttons", val);
+  }
+
+  void _set_bool(String key, bool val) {
+    _data[key] = val;
+    _prefs.then((prefs) => prefs.setBool(key, val));
+  }
+
+  void _set_double(String key, double val) {
+    _data[key] = val;
+    _prefs.then((prefs) => prefs.setDouble(key, val));
+  }
+
+  bool get theme_dark => _data["flow.theme_dark"] ?? true;
+  void set theme_dark(bool val) {
+    _data["flow.theme_dark"] = val;
+    _prefs.then((prefs) => prefs.setBool("flow.theme_dark", val));
+  }
+
+  final Map<String, dynamic> _data = {};
+  final Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
+
+  Future<void> init() async {
+    final SharedPreferences prefs = await _prefs;
+    _data["flow.rest_ratio"] =
+        prefs.getDouble("flow.rest_ratio")?.toDouble() ?? 25;
+    _data["flow.auto_start_rest"] =
+        prefs.getBool("flow.auto_start_rest") ?? false;
+    _data["flow.swap_flow_buttons"] =
+        prefs.getBool("flow.swap_flow_buttons") ?? false;
+    _data["flow.swap_rest_buttons"] =
+        prefs.getBool("flow.swap_rest_buttons") ?? false;
+  }
 }
 
 enum TimerMode {
@@ -92,6 +139,7 @@ class _FlowTimerPageState extends State<FlowTimerPage> {
         _on_start_pressed();
       }
     });
+    configs.init().then((value) => setState(() {}));
     super.initState();
   }
 
@@ -181,8 +229,16 @@ class _FlowTimerPageState extends State<FlowTimerPage> {
                 page == Page.TIMER ? Icons.settings : Icons.arrow_back_ios_new),
           ),
           IconButton(
-            onPressed: () => AdaptiveTheme.of(context).toggleThemeMode(),
-            icon: Icon(Icons.dark_mode),
+            onPressed: () {
+              if (configs.theme_dark) {
+                configs.theme_dark = false;
+                AdaptiveTheme.of(context).setLight();
+              } else {
+                configs.theme_dark = true;
+                AdaptiveTheme.of(context).setDark();
+              }
+            },
+            icon: const Icon(Icons.dark_mode),
           )
         ]),
       ),
@@ -239,7 +295,8 @@ class _FlowTimerPageState extends State<FlowTimerPage> {
                                         _rest_time <= 0
                                     ? null
                                     : _on_start_pressed,
-                                icon: Icon(Icons.pause))
+                                icon: const Icon(Icons.pause),
+                              )
                             : IconButton.filled(
                                 onPressed: _timer_mode == TimerMode.REST &&
                                         _rest_time <= 0

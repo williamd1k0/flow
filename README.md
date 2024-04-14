@@ -1,6 +1,8 @@
 # Flow
 
 ![image](https://github.com/williamd1k0/flow/assets/10428035/5acd3a91-ca76-4cd1-b329-6ae0f66b069e)
+![image](https://github.com/williamd1k0/flow/assets/10428035/b631620c-42ef-4cb0-a919-25ced1070936)
+
 
 Flow is a simple Flutter app that implements a productivity technique called **Flowtime**.
 

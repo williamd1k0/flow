@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Terminal=false
+Name=Flow
+Exec=flow %u
+Icon=flow
+Categories=Utility;
+X-AppImage-Name=Flow
+X-AppImage-Version=mvp
+X-AppImage-Arch=x86_64

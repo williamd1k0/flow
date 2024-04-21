@@ -109,7 +109,7 @@ enum Page {
 }
 
 class _FlowTimerPageState extends State<FlowTimerPage> {
-  final Duration _timer_interval = Duration(milliseconds: 50);
+  final Duration _timer_interval = const Duration(seconds: 1);
   Timer? _timer;
   final AppConfigs configs = AppConfigs();
   FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
@@ -167,7 +167,7 @@ class _FlowTimerPageState extends State<FlowTimerPage> {
     int minutes = seconds ~/ 60;
     seconds %= 60;
     intl.NumberFormat fmt = intl.NumberFormat("00");
-    return "${hour <= 1 ? "${fmt.format(hour)}:" : ""}${fmt.format(minutes)}:${hour <= 1 ? "${fmt.format(seconds)}" : ""}";
+    return "${fmt.format(hour)}:${fmt.format(minutes)}:${fmt.format(seconds)}";
   }
 
   void _on_start_pressed() {

@@ -143,6 +143,12 @@ class _FlowTimerPageState extends State<FlowTimerPage> {
     super.initState();
   }
 
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
   void update_time_spent(int amount) {
     setState(() {
       _flow_time += amount;

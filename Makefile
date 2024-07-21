@@ -1,9 +1,8 @@
 LINUX_BUILD_DIR := build/linux
 LINUX_BUNDLE_DIR := ${LINUX_BUILD_DIR}/x64/release/bundle
 
-
 linux:
-	flutter build linux --obfuscate --split-debug-info build/linux/x64/release/
+	flutter build linux --obfuscate --split-debug-info ${LINUX_BUILD_DIR}/x64/release/
 
 appimage: ${LINUX_BUILD_DIR}/Flow.AppImage
 
@@ -11,7 +10,6 @@ ${LINUX_BUILD_DIR}/Flow.AppImage: ${LINUX_BUNDLE_DIR}/flow ${LINUX_BUNDLE_DIR}/l
 	@rm -rf -- ${LINUX_BUILD_DIR}/Flow.AppDir
 	@cp -r linux/Flow.AppDir ${LINUX_BUILD_DIR}
 	@cp -r ${LINUX_BUNDLE_DIR} ${LINUX_BUILD_DIR}/Flow.AppDir
-	@ln -sf bundle/flow ${LINUX_BUILD_DIR}/Flow.AppDir/AppRun
 	@appimagetool ${LINUX_BUILD_DIR}/Flow.AppDir/ $@
 
 windows:

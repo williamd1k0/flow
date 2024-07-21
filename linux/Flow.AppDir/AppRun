@@ -1,0 +1,8 @@
+#!/usr/bin/sh
+if [ "$1" != "--desktop" ]
+then
+  cp $APPDIR/flow.png $HOME/.local/share/icons/flowapp.png
+  cat $APPDIR/Flow.desktop | sed -e "s@{appdir}@$PWD@g" -e 's/Icon=flow/Icon=flowapp/g' > $HOME/.local/share/applications/Flow.desktop
+  chmod +x $HOME/.local/share/applications/Flow.desktop
+fi
+exec $APPDIR/bundle/flow

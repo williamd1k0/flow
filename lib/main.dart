@@ -40,23 +40,23 @@ class FlowTimerPage extends StatefulWidget {
 
 class AppConfigs {
   double get rest_ratio => _data["flow.rest_ratio"]?.toDouble() ?? 20;
-  void set rest_ratio(double val) {
+  set rest_ratio(double val) {
     _data["flow.rest_ratio"] = val;
     _prefs.then((prefs) => prefs.setDouble("flow.rest_ratio", val));
   }
 
   bool get auto_start_rest => _data["flow.auto_start_rest"] ?? false;
-  void set auto_start_rest(bool val) {
+  set auto_start_rest(bool val) {
     _set_bool("flow.auto_start_rest", val);
   }
 
   bool get swap_flow_buttons => _data["flow.swap_flow_buttons"] ?? false;
-  void set swap_flow_buttons(bool val) {
+  set swap_flow_buttons(bool val) {
     _set_bool("flow.swap_flow_buttons", val);
   }
 
   bool get swap_rest_buttons => _data["flow.swap_rest_buttons"] ?? false;
-  void set swap_rest_buttons(bool val) {
+  set swap_rest_buttons(bool val) {
     _set_bool("flow.swap_rest_buttons", val);
   }
 
@@ -71,7 +71,7 @@ class AppConfigs {
   }
 
   bool get theme_dark => _data["flow.theme_dark"] ?? true;
-  void set theme_dark(bool val) {
+  set theme_dark(bool val) {
     _data["flow.theme_dark"] = val;
     _prefs.then((prefs) => prefs.setBool("flow.theme_dark", val));
   }
